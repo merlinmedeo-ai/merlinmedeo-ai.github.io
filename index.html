@@ -40,22 +40,104 @@
 
 <script>
     const params = new URLSearchParams(location.search);
+
     const kp = (params.get('kp') || '').trim();
+    let imdb = (params.get('imdb') || '').trim();
 
     const player = document.getElementById('kinobd');
     const error = document.getElementById('error');
 
-    if (!/^\d+$/.test(kp)) {
-        player.remove();
-        error.hidden = false;
-        error.textContent = 'Укажите Kinopoisk ID: ?kp=401177';
-    } else {
-        // Официальный способ KinoBD:
-        // <div id="kinobd" data-kinopoisk="401522"></div>
+    let valid = false;
+
+    // =========================
+    // KINOPOISK
+    // =========================
+
+    if (/^\d+$/.test(kp)) {
+
         player.setAttribute('data-kinopoisk', kp);
 
-        const script = document.createElement('script');
-        script.src = 'https://kinobd.net/js/player_.js';
+        console.log(
+            '[KinoBD] Kinopoisk:',
+            kp
+        );
+
+        valid = true;
+    }
+
+    // =========================
+    // IMDB
+    // =========================
+
+    else if (imdb) {
+
+        // KinoBD в примере использует IMDb без "tt"
+        // поэтому tt0499549 превращаем в 0499549
+        imdb = imdb.replace(/^tt/i, '');
+
+        if (/^\d+$/.test(imdb)) {
+
+            player.setAttribute(
+                'data-player',
+                'videospider'
+            );
+
+            player.setAttribute(
+                'data-imdb',
+                imdb
+            );
+
+            console.log(
+                '[KinoBD] IMDb:',
+                imdb
+            );
+
+            valid = true;
+        }
+    }
+
+    // =========================
+    // ОШИБКА
+    // =========================
+
+    if (!valid) {
+
+        player.remove();
+
+        error.hidden = false;
+
+        error.textContent =
+            'Используйте ?kp=401177 или ?imdb=tt0499549';
+
+    } else {
+
+        // =========================
+        // ЗАГРУЗКА KINOBD
+        // =========================
+
+        const script =
+            document.createElement('script');
+
+        script.src =
+            'https://kinobd.net/js/player_.js';
+
+        script.onload = () => {
+            console.log(
+                '[KinoBD] player_.js загружен'
+            );
+        };
+
+        script.onerror = () => {
+
+            console.error(
+                '[KinoBD] Ошибка загрузки player_.js'
+            );
+
+            error.hidden = false;
+
+            error.textContent =
+                'Не удалось загрузить KinoBD.';
+        };
 
         document.body.appendChild(script);
     }
